@@ -160,7 +160,7 @@ def get_new_token(refresh_token: str) -> str:
         raise ValueError(f"Error in response: {body['error']} - {body.get('error_description', '')}")
     print("Token refreshed successfully.")
     
-    save_tokens(body)
+    # save_tokens(body)
     return body
 
 def send_api_request(
