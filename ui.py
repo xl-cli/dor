@@ -2,11 +2,13 @@ import os
 import sys
 from datetime import datetime
 from api_request import get_otp, submit_otp, save_tokens, get_package, purchase_package
+from auth_helper import Auth
 from purchase_api import show_multipayment, show_qris_payment, settlement_bounty
+from auth_helper import AuthInstance
 
 def clear_screen():
     print("clearing screen...")
-    os.system('cls' if os.name == 'nt' else 'clear')
+    # os.system('cls' if os.name == 'nt' else 'clear')
 
 def pause():
     input("\nTekan Enter untuk lanjut...")
@@ -16,35 +18,77 @@ def show_banner():
     print("Dor XL by Flyxt9")
     print("--------------------------")
     
-def show_main_menu(user_data):
+def show_main_menu(number, balance, balance_expired_at):
     clear_screen()
-    if not user_data["is_logged_in"]:
-        print("--------------------------")
-        print("Anda belum login")
-        print("--------------------------")
-        print("Menu:")
-        print("1. Login")
-        print("99. Tutup aplikasi")
-        print("--------------------------")
-    else:
-        phone_number = user_data["phone_number"]
-        remaining_balance = user_data["balance"]
-        expired_at = user_data["balance_expired_at"]
-        expired_at_dt = datetime.fromtimestamp(expired_at).strftime("%Y-%m-%d %H:%M:%S")
+    phone_number = number
+    remaining_balance = balance
+    expired_at = balance_expired_at
+    expired_at_dt = datetime.fromtimestamp(expired_at).strftime("%Y-%m-%d %H:%M:%S")
+    
+    print("--------------------------")
+    print("Informasi Akun")
+    print(f"Nomor: {phone_number}")
+    print(f"Pulsa: Rp {remaining_balance}")
+    print(f"Masa aktif: {expired_at_dt}")
+    print("--------------------------")
+    print("Menu:")
+    print("1. Login/Ganti akun")
+    print("2. Lihat Paket Saya")
+    print("3. Beli Paket XUT")
+    print("4. Beli Paket Berdasarkan Family Code")
+    print("99. Tutup aplikasi")
+    print("--------------------------")
         
+def show_account_menu():
+    clear_screen()
+    AuthInstance.load_tokens()
+    users = AuthInstance.users
+    active_user = AuthInstance.get_active_user()
+    
+    # print(f"users: {users}")
+    
+    in_account_menu = True
+    add_user = False
+    while in_account_menu:
+        # clear_screen()
         print("--------------------------")
-        print("Informasi Akun")
-        print(f"Nomor: {phone_number}")
-        print(f"Pulsa: Rp {remaining_balance}")
-        print(f"Masa aktif: {expired_at_dt}")
-        print("--------------------------")
-        print("Menu:")
-        print("1. Login/Ganti akun")
-        print("2. Lihat Paket Saya")
-        print("3. Beli Paket XUT")
-        print("4. Beli Paket Berdasarkan Family Code")
-        print("99. Tutup aplikasi")
-        print("--------------------------")
+        if AuthInstance.get_active_user() is None or add_user:
+            number, refresh_token = login_prompt(AuthInstance.api_key)
+            if not refresh_token:
+                print("Gagal menambah akun. Silahkan coba lagi.")
+                pause()
+                continue
+            
+            AuthInstance.add_refresh_token(number, refresh_token)
+            AuthInstance.load_tokens()
+            users = AuthInstance.users
+            
+            
+            if add_user:
+                add_user = False
+            continue
+        
+        print("Akun Tersimpan:")
+        if not users or len(users) == 0:
+            print("Tidak ada akun tersimpan.")
+
+        for idx, user in enumerate(users):
+            print(f"{idx + 1}. {user['number']}")
+        
+        input_str = input("Pilih nomor akun untuk login, 0 untuk tambah akun baru, atau '99' untuk kembali: ")
+        if input_str == "99":
+            in_account_menu = False
+            return active_user["number"] if active_user else None
+        elif input_str == "0":
+            add_user = True
+            continue
+        elif input_str.isdigit() and 1 <= int(input_str) <= len(users):
+            selected_user = users[int(input_str) - 1]
+            return selected_user['number']
+        else:
+            print("Input tidak valid. Silahkan coba lagi.")
+            pause()
+            continue
         
 def show_login_menu():
     clear_screen()
@@ -59,7 +103,7 @@ def show_login_menu():
 def login_prompt(api_key: str):
     clear_screen()
     print("--------------------------")
-    print("Request OTP")
+    print("Login ke MyXL")
     print("--------------------------")
     print("Masukan nomor XL Prabayar (Contoh 6281234567890):")
     phone_number = input("Nomor: ")
@@ -86,10 +130,10 @@ def login_prompt(api_key: str):
             pause()
             return None
         
-        save_tokens(tokens)
+        save_tokens(tokens) #TODO: To remove
         print("Berhasil login!")
         
-        return phone_number
+        return phone_number, tokens["refresh_token"]
     except Exception as e:
         return None
     

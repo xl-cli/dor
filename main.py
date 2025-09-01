@@ -6,55 +6,42 @@ from util import load_token, ensure_api_key
 from paket_xut import get_package_xut
 from my_package import fetch_my_packages
 from paket_custom_family import get_packages_by_family
-
-user_data = {
-    "is_logged_in": False,
-    "phone_number": None,
-    "balance": None,
-    "balance_expired_at": None,
-    "tokens": None,
-}
-
-api_key = ""
+from auth_helper import AuthInstance
 
 show_menu = True
 def main():
-    global api_key
-    api_key = ensure_api_key()
-    
     while True:
-        updated_user_data = load_token(api_key)
-        if updated_user_data:
-            global user_data
-            user_data = updated_user_data
-        
-        show_main_menu(user_data)
-        
-        choice = input("Pilih menu: ")
+        active_user = AuthInstance.get_active_user()
+
         # Logged in
-        if user_data["is_logged_in"]:
+        if active_user is not None:
+            balance = get_balance(AuthInstance.api_key, active_user["tokens"]["id_token"])
+            balance_remaining = balance.get("remaining")
+            balance_expired_at = balance.get("expired_at")
+           
+            show_main_menu(active_user["number"], balance_remaining, balance_expired_at)
+            
+            choice = input("Pilih menu: ")
             if choice == "1":
-                print("Changing account...")
-                phone_number = login_prompt(api_key)
-                if phone_number:
-                    user_data["phone_number"] = phone_number
-                    continue
+                selected_user_number = show_account_menu()
+                if selected_user_number:
+                    AuthInstance.set_active_user(selected_user_number)
                 else:
-                    print("Failed to login. Please try again.")
+                    print("No user selected or failed to load user.")
                 continue
             elif choice == "2":
-                fetch_my_packages(api_key, user_data["tokens"])
+                fetch_my_packages(AuthInstance.api_key, active_user["tokens"])
                 continue
             elif choice == "3":
                 # XUT 
-                packages = get_package_xut(api_key, user_data["tokens"])
+                packages = get_package_xut(AuthInstance.api_key, active_user["tokens"])
                 
-                show_package_menu(api_key, user_data["tokens"], packages)
+                show_package_menu(AuthInstance.api_key, active_user["tokens"], packages)
             elif choice == "4":
                 family_code = input("Enter family code (or '99' to cancel): ")
                 if family_code == "99":
                     continue
-                get_packages_by_family(api_key, user_data["tokens"], family_code)
+                get_packages_by_family(AuthInstance.api_key, active_user["tokens"], family_code)
             elif choice == "99":
                 print("Exiting the application.")
                 sys.exit(0)
@@ -63,20 +50,11 @@ def main():
                 pause()
         else:
             # Not logged in
-            if choice == "1":
-                phone_number = login_prompt(api_key)
-                if phone_number:
-                    user_data["phone_number"] = phone_number
-                    continue
-                else:
-                    print("Failed to login. Please try again.")
-                pause()
-            elif choice == "99":
-                print("Exiting the application.")
-                sys.exit(0)
+            selected_user_number = show_account_menu()
+            if selected_user_number:
+                AuthInstance.set_active_user(selected_user_number)
             else:
-                print("Invalid choice. Please try again.")
-                pause()
+                print("No user selected or failed to load user.")
 
 if __name__ == "__main__":
     try:
