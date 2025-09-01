@@ -68,6 +68,7 @@ class Auth:
                         "number": int(rt["number"]),
                         "tokens": tokens
                     })
+                    time.sleep(1)  # To avoid hitting rate limits
                 except Exception as e:
                     if "Bad Request" in str(e):
                         print(f"Refresh token for number {rt['number']} is invalid or expired. Removing it.")
