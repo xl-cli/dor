@@ -44,9 +44,9 @@ def get_packages_by_family(api_key: str, tokens: dict, family_code: str):
                 option_number += 1
             variant_number += 1
 
-        print("99. Kembali ke menu sebelumnya")
+        print("00. Kembali ke menu sebelumnya")
         pkg_choice = input("Pilih paket (nomor): ")
-        if pkg_choice == "99":
+        if pkg_choice == "00":
             in_package_menu = False
             return None
         selected_pkg = next((p for p in packages if p["number"] == int(pkg_choice)), None)

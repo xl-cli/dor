@@ -56,6 +56,7 @@ class Auth:
                 self.users = []
 
             # Validate and load tokens
+            n = 0
             for rt in refresh_tokens:
                 if "number" in rt and "refresh_token" in rt:
                     self.refresh_tokens.append(rt)
@@ -63,6 +64,8 @@ class Auth:
                     print(f"Invalid token entry: {rt}")
                 
                 try:
+                    n += 1
+                    print(f"Refreshing token for number {n}/{len(refresh_tokens)}: {rt['number']}")
                     tokens = get_new_token(rt["refresh_token"])
                     self.users.append({
                         "number": int(rt["number"]),

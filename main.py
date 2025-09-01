@@ -2,7 +2,6 @@ import sys
 
 from api_request import *
 from ui import *
-from util import load_token, ensure_api_key
 from paket_xut import get_package_xut
 from my_package import fetch_my_packages
 from paket_custom_family import get_packages_by_family

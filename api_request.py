@@ -146,8 +146,6 @@ def get_new_token(refresh_token: str) -> str:
         "grant_type": "refresh_token",
         "refresh_token": refresh_token
     }
-    
-    print("Refreshing token...")
 
     resp = requests.post(url, headers=headers, data=data, timeout=30)
     resp.raise_for_status()
@@ -158,9 +156,7 @@ def get_new_token(refresh_token: str) -> str:
         raise ValueError("ID token not found in response")
     if "error" in body:
         raise ValueError(f"Error in response: {body['error']} - {body.get('error_description', '')}")
-    print("Token refreshed successfully.")
     
-    # save_tokens(body)
     return body
 
 def send_api_request(
