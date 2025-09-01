@@ -61,19 +61,28 @@ class Auth:
                     self.refresh_tokens.append(rt)
                 else:
                     print(f"Invalid token entry: {rt}")
-
-                tokens = get_new_token(rt["refresh_token"])
-                if tokens:
+                
+                try:
+                    tokens = get_new_token(rt["refresh_token"])
                     self.users.append({
-                        "number": rt["number"],
+                        "number": int(rt["number"]),
                         "tokens": tokens
                     })
-                else:
+                except Exception as e:
+                    if "Bad Request" in str(e):
+                        print(f"Refresh token for number {rt['number']} is invalid or expired. Removing it.")
+                        self.remove_refresh_token(rt["number"])
                     print(f"Failed to refresh token for number: {rt['number']}")
         
         # Update file
+        for user in self.users:
+            matching_rt = next((rt for rt in self.refresh_tokens if int(rt["number"]) == int(user["number"])), None)
+            if matching_rt:
+                matching_rt["refresh_token"] = user["tokens"]["refresh_token"]
+                
+
         with open("refresh-tokens.json", "w", encoding="utf-8") as f:
-            json.dump(self.refresh_tokens, f, indent=4)
+            json.dump(self.refresh_tokens, f, indent=2)
 
     def add_refresh_token(self, number: int, refresh_token: str):
         # Check if number already exist, if yes, replace it, if not append
@@ -82,13 +91,13 @@ class Auth:
             existing["refresh_token"] = refresh_token
         else:
             self.refresh_tokens.append({
-                "number": number,
+                "number": int(number),
                 "refresh_token": refresh_token
             })
         
         # Save to file
         with open("refresh-tokens.json", "w", encoding="utf-8") as f:
-            json.dump(self.refresh_tokens, f, indent=4)
+            json.dump(self.refresh_tokens, f, indent=2)
             
         # Refresh user tokens
         self.load_tokens()

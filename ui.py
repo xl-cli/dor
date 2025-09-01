@@ -2,13 +2,12 @@ import os
 import sys
 from datetime import datetime
 from api_request import get_otp, submit_otp, save_tokens, get_package, purchase_package
-from auth_helper import Auth
 from purchase_api import show_multipayment, show_qris_payment, settlement_bounty
 from auth_helper import AuthInstance
 
 def clear_screen():
     print("clearing screen...")
-    # os.system('cls' if os.name == 'nt' else 'clear')
+    os.system('cls' if os.name == 'nt' else 'clear')
 
 def pause():
     input("\nTekan Enter untuk lanjut...")
