@@ -58,7 +58,7 @@ def show_account_menu():
                 pause()
                 continue
             
-            AuthInstance.add_refresh_token(number, refresh_token)
+            AuthInstance.add_refresh_token(int(number), refresh_token)
             AuthInstance.load_tokens()
             users = AuthInstance.users
             

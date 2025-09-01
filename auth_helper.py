@@ -10,12 +10,8 @@ class Auth:
     
     api_key = ""
     
-    refresh_tokens = [
-        {
-            "number": 628123456789,
-            "refresh_token": "your_refresh_token_here"
-        }
-    ]
+    refresh_tokens = None
+    # Format of refresh_tokens: [{"number": int, "refresh_token": str}]
     
     users = []
     
