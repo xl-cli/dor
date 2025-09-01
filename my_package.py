@@ -17,6 +17,7 @@ def fetch_my_packages(api_key: str, tokens: dict):
     res = send_api_request(api_key, path, payload, id_token, "POST")
     if res.get("status") != "SUCCESS":
         print("Failed to fetch packages")
+        print("Response:", res)
         pause()
         return None
     

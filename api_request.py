@@ -288,6 +288,7 @@ def get_families(api_key: str, tokens: dict, package_category_code: str) -> dict
         print(f"Failed to get families for category {package_category_code}")
         print(f"Res:{res}")
         print(json.dumps(res, indent=2))
+        input("Press Enter to continue...")
         return None
     return res["data"]
 
@@ -401,6 +402,8 @@ def purchase_package(api_key: str, tokens: dict, package_option_code: str) -> di
     payment_res = send_api_request(api_key, payment_path, payment_payload, tokens["id_token"], "POST")
     if payment_res.get("status") != "SUCCESS":
         print("Failed to initiate payment")
+        print(json.dumps(payment_res, indent=2))
+        input("Press Enter to continue...")
         return None
     
     token_payment = payment_res["data"]["token_payment"]
