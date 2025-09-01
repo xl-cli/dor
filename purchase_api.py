@@ -2,6 +2,7 @@ from datetime import datetime, timezone, timedelta
 import json
 import uuid
 import base64
+import qrcode
 
 import requests
 from api_request import *
@@ -402,10 +403,20 @@ def show_qris_payment(api_key: str, tokens: dict, package_option_code: str, toke
         return
     print(f"QRIS data:\n{qris_code}")
     
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=1,
+        border=1,
+    )
+    qr.add_data(qris_code)
+    qr.make(fit=True)
+    qr.print_ascii(invert=True)
+    
     qris_b64 = base64.urlsafe_b64encode(qris_code.encode()).decode()
     qris_url = f"https://ki-ar-kod.netlify.app/?data={qris_b64}"
     
-    print(f"Buka link berikut untuk melihat QRIS:\n{qris_url}")
+    print(f"Atau buka link berikut untuk melihat QRIS:\n{qris_url}")
     
     return
 
