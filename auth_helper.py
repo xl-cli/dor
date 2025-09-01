@@ -34,9 +34,9 @@ class Auth:
             if os.path.exists("refresh-tokens.json"):
                 self.load_tokens()
             else:
+                # Create empty file
                 with open("refresh-tokens.json", "w", encoding="utf-8") as f:
-                    json.dump(self.refresh_tokens, f, indent=4)
-                self.load_tokens()
+                    json.dump([], f, indent=4)
 
             if len(self.users) > 0:
                 self.active_user = self.users[0]
