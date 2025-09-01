@@ -2,7 +2,7 @@ import os
 import sys
 from datetime import datetime
 from api_request import get_otp, submit_otp, save_tokens, get_package, purchase_package
-from purchase_api import show_multipayment, show_qris_payment
+from purchase_api import show_multipayment, show_qris_payment, settlement_bounty
 
 def clear_screen():
     print("clearing screen...")
@@ -138,6 +138,8 @@ def show_package_details(api_key, tokens, package_option_code):
     title = f"{name1} {name2} {name3}".strip()
     
     token_confirmation = package["token_confirmation"]
+    ts_to_sign = package["timestamp"]
+    payment_for = package["package_family"]["payment_for"]
     
 
     print(f"Nama: {title}")
@@ -147,6 +149,10 @@ def show_package_details(api_key, tokens, package_option_code):
     print("1. Beli dengan Pulsa")
     print("2. Beli dengan E-Wallet")
     print("3. Bayar dengan QRIS")
+    
+    if payment_for == "REDEEM_VOUCHER":
+        print("4. Ambil sebagai bonus (jika tersedia)")
+
     choice = input("Pilih metode pembayaran: ")
     if choice == '1':
         purchase_package(api_key, tokens, package_option_code)
@@ -160,7 +166,16 @@ def show_package_details(api_key, tokens, package_option_code):
         show_qris_payment(api_key, tokens, package_option_code, token_confirmation, price)
         input("Silahkan lakukan pembayaran & cek hasil pembelian di aplikasi MyXL. Tekan Enter untuk kembali.")
         return True
-        
+    elif choice == '4':
+        settlement_bounty(
+            api_key=api_key,
+            tokens=tokens,
+            token_confirmation=token_confirmation,
+            ts_to_sign=ts_to_sign,
+            payment_target=package_option_code,
+            price=price,
+            item_name=name2
+        )
     else:
         print("Purchase cancelled.")
         return False

@@ -8,6 +8,7 @@ API_KEY = "vT8tINqHaOxXbGE7eOWAhA=="
 XDATA_DECRYPT_URL = "https://crypto.mashu.lol/api/decrypt"
 XDATA_ENCRYPT_SIGN_URL = "https://crypto.mashu.lol/api/encryptsign"
 PAYMENT_SIGN_URL = "https://crypto.mashu.lol/api/sign-payment"
+BOUNTY_SIGN_URL = "https://crypto.mashu.lol/api/sign-bounty"
 AX_SIGN_URL = "https://crypto.mashu.lol/api/sign-ax"
 
 AES_KEY_ASCII = "5dccbf08920a5527"
@@ -153,3 +154,29 @@ def get_x_signature_payment(
         return response.json().get("x_signature")
     else:
         raise Exception(f"Signature generation failed: {response.text}")
+    
+def get_x_signature_bounty(
+        api_key: str,
+        access_token: str,
+        sig_time_sec: int,
+        package_code: str,
+        token_payment: str
+    ) -> str:
+    headers = {
+        "Content-Type": "application/json",
+        "x-api-key": api_key,
+    }
+    
+    request_body = {
+        "access_token": access_token,
+        "sig_time_sec": sig_time_sec,
+        "package_code": package_code,
+        "token_payment": token_payment
+    }
+    
+    response = requests.request("POST", BOUNTY_SIGN_URL, json=request_body, headers=headers, timeout=30)
+    if response.status_code == 200:
+        return response.json().get("x_signature")
+    else:
+        raise Exception(f"Signature generation failed: {response.text}")
+    

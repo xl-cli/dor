@@ -5,7 +5,7 @@ import base64
 
 import requests
 from api_request import *
-from crypto_helper import API_KEY, build_encrypted_field, decrypt_xdata, encryptsign_xdata, java_like_timestamp, get_x_signature_payment
+from crypto_helper import API_KEY, build_encrypted_field, decrypt_xdata, encryptsign_xdata, java_like_timestamp, get_x_signature_payment, get_x_signature_bounty
 import time
 
 def get_payment_methods(
@@ -408,3 +408,141 @@ def show_qris_payment(api_key: str, tokens: dict, package_option_code: str, toke
     print(f"Buka link berikut untuk melihat QRIS:\n{qris_url}")
     
     return
+
+def settlement_bounty(
+    api_key: str,
+    tokens: dict,
+    token_confirmation: str,
+    ts_to_sign: int,
+    payment_target: str,
+    price: int,
+    item_name: str = "",
+):
+    # Settlement request
+    # 864d43cb-7f32-46ad-aed5-6e199fad851f|VPROG
+    path = "api/v8/personalization/bounties-exchange"
+    settlement_payload = {
+        "total_discount": 0,
+        "is_enterprise": False,
+        "payment_token": "",
+        "token_payment": "",
+        "activated_autobuy_code": "",
+        "cc_payment_type": "",
+        "is_myxl_wallet": False,
+        "pin": "",
+        "ewallet_promo_id": "",
+        "members": [],
+        "total_fee": 0,
+        "fingerprint": "",
+        "autobuy_threshold_setting": {
+            "label": "",
+            "type": "",
+            "value": 0
+        },
+        "is_use_point": False,
+        "lang": "en",
+        "payment_method": "BALANCE",
+        "timestamp": ts_to_sign,
+        "points_gained": 0,
+        "can_trigger_rating": False,
+        "akrab_members": [],
+        "akrab_parent_alias": "",
+        "referral_unique_code": "",
+        "coupon": "",
+        "payment_for": "REDEEM_VOUCHER",
+        "with_upsell": False,
+        "topup_number": "",
+        "stage_token": "",
+        "authentication_id": "",
+        "encrypted_payment_token": build_encrypted_field(urlsafe_b64=True),
+        "token": "",
+        "token_confirmation": token_confirmation,
+        "access_token": tokens["access_token"],
+        "wallet_number": "",
+        "encrypted_authentication_id": build_encrypted_field(urlsafe_b64=True),
+        "additional_data": {
+            "original_price": 0,
+            "is_spend_limit_temporary": False,
+            "migration_type": "",
+            "akrab_m2m_group_id": "",
+            "spend_limit_amount": 0,
+            "is_spend_limit": False,
+            "mission_id": "",
+            "tax": 0,
+            "benefit_type": "",
+            "quota_bonus": 0,
+            "cashtag": "",
+            "is_family_plan": False,
+            "combo_details": [],
+            "is_switch_plan": False,
+            "discount_recurring": 0,
+            "is_akrab_m2m": False,
+            "balance_type": "",
+            "has_bonus": False,
+            "discount_promo": 0
+        },
+        "total_amount": 0,
+        "is_using_autobuy": False,
+        "items": [{
+            "item_code": payment_target,
+            "product_type": "",
+            "item_price": price,
+            "item_name": item_name,
+            "tax": 0
+        }]
+    }
+        
+    encrypted_payload = encryptsign_xdata(
+        api_key=api_key,
+        method="POST",
+        path=path,
+        id_token=tokens["id_token"],
+        payload=settlement_payload
+    )
+    
+    xtime = int(encrypted_payload["encrypted_body"]["xtime"])
+    sig_time_sec = (xtime // 1000)
+    x_requested_at = datetime.fromtimestamp(sig_time_sec, tz=timezone.utc).astimezone()
+    settlement_payload["timestamp"] = ts_to_sign
+    
+    body = encrypted_payload["encrypted_body"]
+        
+    x_sig = get_x_signature_bounty(
+        api_key=api_key,
+        access_token=tokens["access_token"],
+        sig_time_sec=ts_to_sign,
+        package_code=payment_target,
+        token_payment=token_confirmation
+    )
+    
+    headers = {
+        "host": "api.myxl.xlaxiata.co.id",
+        "content-type": "application/json; charset=utf-8",
+        "user-agent": "myXL / 8.6.0(1179); com.android.vending; (samsung; SM-N935F; SDK 33; Android 13)",
+        "x-api-key": API_KEY,
+        "authorization": f"Bearer {tokens['id_token']}",
+        "x-hv": "v3",
+        "x-signature-time": str(sig_time_sec),
+        "x-signature": x_sig,
+        "x-request-id": str(uuid.uuid4()),
+        "x-request-at": java_like_timestamp(x_requested_at),
+        "x-version-app": "8.6.0",
+    }
+    
+    url = f"https://api.myxl.xlaxiata.co.id/{path}"
+    print("Sending bounty request...")
+    resp = requests.post(url, headers=headers, data=json.dumps(body), timeout=30)
+    
+    try:
+        decrypted_body = decrypt_xdata(api_key, json.loads(resp.text))
+        if decrypted_body["status"] != "SUCCESS":
+            print("Failed to claim bounty.")
+            print(f"Error: {decrypted_body}")
+            return None
+        
+        print(decrypted_body)
+        
+        return decrypted_body
+    except Exception as e:
+        print("[decrypt err]", e)
+        return resp.text

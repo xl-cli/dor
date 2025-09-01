@@ -264,10 +264,33 @@ def get_family(api_key: str, tokens: dict, family_code: str) -> dict:
     res = send_api_request(api_key, path, payload_dict, id_token, "POST")
     if res.get("status") != "SUCCESS":
         print(f"Failed to get family {family_code}")
+        print(json.dumps(res, indent=2))
+        input("Press Enter to continue...")
         return None
     
     return res["data"]
+
+def get_families(api_key: str, tokens: dict, package_category_code: str) -> dict:
+    print("Fetching families...")
+    path = "api/v8/xl-stores/families"
+    payload_dict = {
+        "migration_type": "",
+        "is_enterprise": False,
+        "is_shareable": False,
+        "package_category_code": package_category_code,
+        "with_icon_url": True,
+        "is_migration": False,
+        "lang": "en"
+    }
     
+    res = send_api_request(api_key, path, payload_dict, tokens["id_token"], "POST")
+    if res.get("status") != "SUCCESS":
+        print(f"Failed to get families for category {package_category_code}")
+        print(f"Res:{res}")
+        print(json.dumps(res, indent=2))
+        return None
+    return res["data"]
+
 def get_package(api_key: str, tokens: dict, package_option_code: str) -> dict:
     path = "api/v8/xl-stores/options/detail"
     
