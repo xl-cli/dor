@@ -29,18 +29,18 @@ def main():
                     print("No user selected or failed to load user.")
                 continue
             elif choice == "2":
-                fetch_my_packages(AuthInstance.api_key, active_user["tokens"])
+                fetch_my_packages()
                 continue
             elif choice == "3":
                 # XUT 
-                packages = get_package_xut(AuthInstance.api_key, active_user["tokens"])
+                packages = get_package_xut()
                 
-                show_package_menu(AuthInstance.api_key, active_user["tokens"], packages)
+                show_package_menu(packages)
             elif choice == "4":
                 family_code = input("Enter family code (or '99' to cancel): ")
                 if family_code == "99":
                     continue
-                get_packages_by_family(AuthInstance.api_key, active_user["tokens"], family_code)
+                get_packages_by_family(family_code)
             elif choice == "99":
                 print("Exiting the application.")
                 sys.exit(0)

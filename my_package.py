@@ -1,8 +1,16 @@
 from api_request import get_package, send_api_request
 from ui import clear_screen, pause
+from auth_helper import AuthInstance
 
 # Fetch my packages
-def fetch_my_packages(api_key: str, tokens: dict):
+def fetch_my_packages():
+    api_key = AuthInstance.api_key
+    tokens = AuthInstance.get_active_tokens()
+    if not tokens:
+        print("No active user tokens found.")
+        pause()
+        return None
+    
     id_token = tokens.get("id_token")
     
     path = "api/v8/packages/quota-details"

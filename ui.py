@@ -129,14 +129,21 @@ def login_prompt(api_key: str):
             pause()
             return None
         
-        save_tokens(tokens) #TODO: To remove
+        # save_tokens(tokens) #TODO: To remove
         print("Berhasil login!")
         
         return phone_number, tokens["refresh_token"]
     except Exception as e:
         return None
     
-def show_package_menu(api_key, tokens, packages):
+def show_package_menu(packages):
+    api_key = AuthInstance.api_key
+    tokens = AuthInstance.get_active_tokens()
+    if not tokens:
+        print("No active user tokens found.")
+        pause()
+        return None
+    
     in_package_menu = True
     while in_package_menu:
         clear_screen()
