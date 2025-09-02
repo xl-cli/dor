@@ -41,7 +41,7 @@ def show_main_menu(number, balance, balance_expired_at):
 def show_account_menu():
     clear_screen()
     AuthInstance.load_tokens()
-    users = AuthInstance.users
+    users = AuthInstance.refresh_tokens
     active_user = AuthInstance.get_active_user()
     
     # print(f"users: {users}")
@@ -49,7 +49,7 @@ def show_account_menu():
     in_account_menu = True
     add_user = False
     while in_account_menu:
-        # clear_screen()
+        clear_screen()
         print("--------------------------")
         if AuthInstance.get_active_user() is None or add_user:
             number, refresh_token = login_prompt(AuthInstance.api_key)
@@ -60,7 +60,7 @@ def show_account_menu():
             
             AuthInstance.add_refresh_token(int(number), refresh_token)
             AuthInstance.load_tokens()
-            users = AuthInstance.users
+            users = AuthInstance.refresh_tokens
             
             
             if add_user:
@@ -72,14 +72,38 @@ def show_account_menu():
             print("Tidak ada akun tersimpan.")
 
         for idx, user in enumerate(users):
-            print(f"{idx + 1}. {user['number']}")
+            is_active = active_user and user["number"] == active_user["number"]
+            active_marker = " (Aktif)" if is_active else ""
+            print(f"{idx + 1}. {user['number']}{active_marker}")
         
-        input_str = input("Pilih nomor akun untuk login, 0 untuk tambah akun baru, atau '99' untuk kembali: ")
-        if input_str == "99":
+        print("Command:")
+        print("0: Tambah Akun")
+        print("00: Kembali ke menu utama")
+        print("99: Hapus Akun aktif")
+        print("Masukan nomor akun untuk berganti.")
+        input_str = input("Pilihan:")
+        if input_str == "00":
             in_account_menu = False
             return active_user["number"] if active_user else None
         elif input_str == "0":
             add_user = True
+            continue
+        elif input_str == "99":
+            if not active_user:
+                print("Tidak ada akun aktif untuk dihapus.")
+                pause()
+                continue
+            confirm = input(f"Yakin ingin menghapus akun {active_user['number']}? (y/n): ")
+            if confirm.lower() == 'y':
+                AuthInstance.remove_refresh_token(active_user["number"])
+                # AuthInstance.load_tokens()
+                users = AuthInstance.refresh_tokens
+                active_user = AuthInstance.get_active_user()
+                print("Akun berhasil dihapus.")
+                pause()
+            else:
+                print("Penghapusan akun dibatalkan.")
+                pause()
             continue
         elif input_str.isdigit() and 1 <= int(input_str) <= len(users):
             selected_user = users[int(input_str) - 1]
@@ -134,7 +158,7 @@ def login_prompt(api_key: str):
         
         return phone_number, tokens["refresh_token"]
     except Exception as e:
-        return None
+        return None, None
     
 def show_package_menu(packages):
     api_key = AuthInstance.api_key

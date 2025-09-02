@@ -10,10 +10,10 @@ class Auth:
     
     api_key = ""
     
-    refresh_tokens = None
+    refresh_tokens = []
     # Format of refresh_tokens: [{"number": int, "refresh_token": str}]
     
-    users = []
+    # users = []
     
     active_user = None
     # Format of active_user: {"number": int, "tokens": {"refresh_token": str, "access_token": str, "id_token": str}}
@@ -34,13 +34,19 @@ class Auth:
                 with open("refresh-tokens.json", "w", encoding="utf-8") as f:
                     json.dump([], f, indent=4)
 
-            if len(self.users) > 0:
-                self.active_user = self.users[0]
+            # Select the first user as active user by default
+            if self.refresh_tokens and len(self.refresh_tokens) != 0:
+                first_rt = self.refresh_tokens[0]
+                tokens = get_new_token(first_rt["refresh_token"])
+                if tokens:
+                    self.active_user = {
+                        "number": int(first_rt["number"]),
+                        "tokens": tokens
+                    }
                 
             self.api_key = ensure_api_key()
-            
             self.last_refresh_time = int(time.time())
-            
+
             self._initialized_ = True
             
     def load_tokens(self):
@@ -49,40 +55,40 @@ class Auth:
             
             if len(refresh_tokens) !=  0:
                 self.refresh_tokens = []
-                self.users = []
+                # self.users = []
 
             # Validate and load tokens
-            n = 0
+            # n = 0
             for rt in refresh_tokens:
                 if "number" in rt and "refresh_token" in rt:
                     self.refresh_tokens.append(rt)
                 else:
                     print(f"Invalid token entry: {rt}")
                 
-                try:
-                    n += 1
-                    print(f"Refreshing token for number {n}/{len(refresh_tokens)}: {rt['number']}")
-                    tokens = get_new_token(rt["refresh_token"])
-                    self.users.append({
-                        "number": int(rt["number"]),
-                        "tokens": tokens
-                    })
-                    time.sleep(1)  # To avoid hitting rate limits
-                except Exception as e:
-                    if "Bad Request" in str(e):
-                        print(f"Refresh token for number {rt['number']} is invalid or expired. Removing it.")
-                        self.remove_refresh_token(rt["number"])
-                    print(f"Failed to refresh token for number: {rt['number']}")
+                # try:
+                #     n += 1
+                #     print(f"Refreshing token for number {n}/{len(refresh_tokens)}: {rt['number']}")
+                #     tokens = get_new_token(rt["refresh_token"])
+                #     self.users.append({
+                #         "number": int(rt["number"]),
+                #         "tokens": tokens
+                #     })
+                #     time.sleep(1)  # To avoid hitting rate limits
+                # except Exception as e:
+                #     if "Bad Request" in str(e):
+                #         print(f"Refresh token for number {rt['number']} is invalid or expired. Removing it.")
+                #         self.remove_refresh_token(rt["number"])
+                #     print(f"Failed to refresh token for number: {rt['number']}")
         
         # Update file
-        for user in self.users:
-            matching_rt = next((rt for rt in self.refresh_tokens if int(rt["number"]) == int(user["number"])), None)
-            if matching_rt:
-                matching_rt["refresh_token"] = user["tokens"]["refresh_token"]
+        # for user in self.users:
+        #     matching_rt = next((rt for rt in self.refresh_tokens if int(rt["number"]) == int(user["number"])), None)
+        #     if matching_rt:
+        #         matching_rt["refresh_token"] = user["tokens"]["refresh_token"]
                 
 
-        with open("refresh-tokens.json", "w", encoding="utf-8") as f:
-            json.dump(self.refresh_tokens, f, indent=2)
+        # with open("refresh-tokens.json", "w", encoding="utf-8") as f:
+        #     json.dump(self.refresh_tokens, f, indent=2)
 
     def add_refresh_token(self, number: int, refresh_token: str):
         # Check if number already exist, if yes, replace it, if not append
@@ -100,42 +106,58 @@ class Auth:
             json.dump(self.refresh_tokens, f, indent=2)
             
         # Refresh user tokens
-        self.load_tokens()
+        # self.load_tokens()
             
     def remove_refresh_token(self, number: int):
         self.refresh_tokens = [rt for rt in self.refresh_tokens if rt["number"] != number]
-        self.users = [user for user in self.users if user["number"] != number]
+
+        # self.users = [user for user in self.users if user["number"] != number]
         
         # Save to file
         with open("refresh-tokens.json", "w", encoding="utf-8") as f:
             json.dump(self.refresh_tokens, f, indent=4)
             
         # Refresh user tokens
-        self.load_tokens()
+        # self.load_tokens()
         
         # If the removed user was the active user, select a new active user if available
         if self.active_user and self.active_user["number"] == number:
-            if len(self.users) > 0:
-                self.active_user = self.users[0]
+            # Select the first user as active user by default
+            if len(self.refresh_tokens) != 0:
+                first_rt = self.refresh_tokens[0]
+                tokens = get_new_token(first_rt["refresh_token"])
+                if tokens:
+                    self.active_user = {
+                        "number": int(first_rt["number"]),
+                        "tokens": tokens
+                    }
             else:
+                input("No users left. Press Enter to continue...")
                 self.active_user = None
-        
-    def get_user_tokens(self, number: int):
-        user = next((user for user in self.users if user["number"] == number), None)
-        return user["tokens"] if user else None
-    
+
+    # def get_user_tokens(self, number: int):
+    #     user = next((user for user in self.users if user["number"] == number), None)
+    #     return user["tokens"] if user else None
+
     def set_active_user(self, number: int):
-        user = next((user for user in self.users if user["number"] == number), None)
-        if user:
-            self.active_user = user
-            print(f"Active user set to {number}")
+        # Get refresh token for the number from refresh_tokens
+        rt_entry = next((rt for rt in self.refresh_tokens if rt["number"] == number), None)
+        if not rt_entry:
+            print(f"No refresh token found for number: {number}")
             input("Press Enter to continue...")
-            return True
-        else:
-            print(f"User with number {number} not found.")
+            return False
+
+        tokens = get_new_token(rt_entry["refresh_token"])
+        if not tokens:
+            print(f"Failed to get tokens for number: {number}. The refresh token might be invalid or expired.")
             input("Press Enter to continue...")
-        return False
-    
+            return False
+
+        self.active_user = {
+            "number": int(number),
+            "tokens": tokens
+        }
+
     def renew_active_user_token(self):
         if self.active_user:
             tokens = get_new_token(self.active_user["tokens"]["refresh_token"])
@@ -156,6 +178,15 @@ class Auth:
     
     def get_active_user(self):
         if not self.active_user:
+            # Choose the first user if available
+            if len(self.refresh_tokens) != 0:
+                first_rt = self.refresh_tokens[0]
+                tokens = get_new_token(first_rt["refresh_token"])
+                if tokens:
+                    self.active_user = {
+                        "number": int(first_rt["number"]),
+                        "tokens": tokens
+                    }
             return None
         
         if self.last_refresh_time is None or (int(time.time()) - self.last_refresh_time) > 300:

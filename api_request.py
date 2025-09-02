@@ -100,6 +100,7 @@ def submit_otp(api_key: str, contact: str, code: str):
             print(f"[Error submit_otp]: {json_body['error_description']}")
             return None
         
+        print("Login successful.")
         return json_body
     except requests.RequestException as e:
         print(f"[Error submit_otp]: {e}")
@@ -120,6 +121,41 @@ def load_tokens(filename: str = "tokens.json") -> dict:
     except FileNotFoundError:
         print(f"File {filename} not found. Returning empty tokens.")
         return {}
+
+def extend_session(contact: str) -> str:
+    url = f"https://gede.ciam.xlaxiata.co.id/realms/xl-ciam/auth/extend-session?contact={contact}&contactType=DEVICEID"
+    
+    now = datetime.now(timezone(timedelta(hours=7)))  # GMT+7
+    ax_request_at = now.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "+0700"
+    ax_request_id = str(uuid.uuid4())
+
+    headers = {
+        "Host": "gede.ciam.xlaxiata.co.id",
+        "ax-request-at": ax_request_at,
+        "ax-device-id": "92fb44c0804233eb4d9e29f838223a15",
+        "ax-request-id": ax_request_id,
+        "ax-request-device": "samsung",
+        "ax-request-device-model": "SM-N935F",
+        "ax-fingerprint": "YmQLy9ZiLLBFAEVcI4Dnw9+NJWZcdGoQyewxMF/9hbfk/8GbKBgtZxqdiiam8+m2lK31E/zJQ7kjuPXpB3EE8uHGk5i+PevKLaUFo/Xi5Fk=",
+        "authorization": "Basic OWZjOTdlZDEtNmEzMC00OGQ1LTk1MTYtNjBjNTNjZTNhMTM1OllEV21GNExKajlYSUt3UW56eTJlMmxiMHRKUWIyOW8z",
+        "user-agent": "myXL / 8.6.0(1179); com.android.vending; (samsung; SM-N935F; SDK 33; Android 13)",
+        "ax-substype": "PREPAID",
+        "content-type": "application/json"
+    }
+    
+    res = requests.get(url, headers=headers, timeout=30)
+    print("res", res.text)
+    if res.status_code != 200:
+        print(f"Error extending session: {res.status_code}")
+        input("Press Enter to continue...")
+        return ""
+    
+    body = res.json()
+    if "data" in body and "exchange_code" in body["data"]:
+        return body["data"]["exchange_code"]
+    else:
+        print("Error: exchange_code not found in response")
+        input("Press Enter to continue...")
 
 def get_new_token(refresh_token: str) -> str:
     url = "https://gede.ciam.xlaxiata.co.id/realms/xl-ciam/protocol/openid-connect/token"
@@ -148,6 +184,11 @@ def get_new_token(refresh_token: str) -> str:
     }
 
     resp = requests.post(url, headers=headers, data=data, timeout=30)
+    if resp.status_code == 400:
+        if resp.json().get("error_description") == "Session not active":
+            print("Refresh token expired. Pleas remove and re-add the account.")
+            return None
+        
     resp.raise_for_status()
 
     body = resp.json()
