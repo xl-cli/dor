@@ -199,7 +199,7 @@ def show_package_details(api_key, tokens, package_option_code):
     print("Detail Paket")
     print("--------------------------")
     package = get_package(api_key, tokens, package_option_code)
-    print(json.dumps(package, indent=2))
+    # print(json.dumps(package, indent=2))
     if not package:
         print("Failed to load package details.")
         pause()

@@ -424,7 +424,14 @@ def purchase_package(api_key: str, tokens: dict, package_option_code: str) -> di
     token_confirmation = package_details_data["token_confirmation"]
     payment_target = package_details_data["package_option"]["package_option_code"]
     price = package_details_data["package_option"]["price"]
-    # price = 500
+    amount_str = input(f"Package price is {price}. Enter value if you need to overwrite, press enter to ignore: ")
+    amount_int = price
+    if amount_str != "":
+        try:
+            amount_int = int(amount_str)
+        except ValueError:
+            print("Invalid overwrite input, using original price.")
+            return None
     
     payment_path = "payments/api/v8/payment-methods-option"
     payment_payload = {
@@ -488,7 +495,7 @@ def purchase_package(api_key: str, tokens: dict, package_option_code: str) -> di
         "wallet_number": "",
         "encrypted_authentication_id": build_encrypted_field(urlsafe_b64=True),
         "additional_data": {},
-        "total_amount": price,
+        "total_amount": amount_int,
         "is_using_autobuy": False,
         "items": [{
             "item_code": payment_target,
@@ -500,6 +507,7 @@ def purchase_package(api_key: str, tokens: dict, package_option_code: str) -> di
     }
     
     print("Processing purchase...")
+    # print(f"settlement payload:\n{json.dumps(settlement_payload, indent=2)}")
     purchase_result = send_payment_request(api_key, settlement_payload, tokens["access_token"], tokens["id_token"], token_payment, ts_to_sign)
     
     print(f"Purchase result:\n{json.dumps(purchase_result, indent=2)}")
