@@ -288,7 +288,7 @@ def get_family(api_key: str, tokens: dict, family_code: str) -> dict:
         "is_show_tagging_tab": True,
         "is_dedicated_event": True,
         "is_transaction_routine": False,
-        "migration_type": "",
+        "migration_type": "NONE",
         "package_family_code": family_code,
         "is_autobuy": False,
         "is_enterprise": False,
@@ -424,6 +424,7 @@ def purchase_package(api_key: str, tokens: dict, package_option_code: str) -> di
     token_confirmation = package_details_data["token_confirmation"]
     payment_target = package_details_data["package_option"]["package_option_code"]
     price = package_details_data["package_option"]["price"]
+    # price = 500
     
     payment_path = "payments/api/v8/payment-methods-option"
     payment_payload = {
