@@ -5,6 +5,7 @@ from datetime import datetime
 from api_request import get_otp, submit_otp, save_tokens, get_package, purchase_package
 from purchase_api import show_multipayment, show_qris_payment, settlement_bounty
 from auth_helper import AuthInstance
+from util import display_html
 
 def clear_screen():
     print("clearing screen...")
@@ -154,7 +155,6 @@ def login_prompt(api_key: str):
             pause()
             return None
         
-        # save_tokens(tokens) #TODO: To remove
         print("Berhasil login!")
         
         return phone_number, tokens["refresh_token"]
@@ -199,15 +199,15 @@ def show_package_details(api_key, tokens, package_option_code):
     print("Detail Paket")
     print("--------------------------")
     package = get_package(api_key, tokens, package_option_code)
-    # print(json.dumps(package, indent=2))
+    # print(f"[SPD-202]:\n{json.dumps(package, indent=2)}")
     if not package:
         print("Failed to load package details.")
         pause()
         return False
     name2 = package.get("package_detail_variant", "").get("name","") #For Xtra Combo
     price = package["package_option"]["price"]
-    detail = package["package_option"]["tnc"]
-    detail = detail.replace("<p>", "").replace("</p>", "").replace("<strong>", "").replace("</strong>", "").replace("<br>", "").replace("<br />", "").strip()
+    detail = display_html(package["package_option"]["tnc"])
+
     name3 = package.get("package_option", {}).get("name","") #Vidio
     name1 = package.get("package_family", {}).get("name","") #Unlimited Turbo
     
@@ -217,9 +217,31 @@ def show_package_details(api_key, tokens, package_option_code):
     ts_to_sign = package["timestamp"]
     payment_for = package["package_family"]["payment_for"]
     
-
+    print("--------------------------")
     print(f"Nama: {title}")
     print(f"Harga: Rp {price}")
+    print("--------------------------")
+    benefits = package["package_option"]["benefits"]
+    if benefits and isinstance(benefits, list):
+        print("Benefits:")
+        for benefit in benefits:
+            print("--------------------------")
+            print(f" Name: {benefit['name']}")
+            if benefit['total'] > 0:
+                quota = int(benefit['total'])
+                # It is in byte, make it in GB
+                if quota >= 1_000_000_000:
+                    quota_gb = quota / (1024 ** 3)
+                    print(f"  Quota: {quota_gb:.2f} GB")
+                elif quota >= 1_000_000:
+                    quota_mb = quota / (1024 ** 2)
+                    print(f"  Quota: {quota_mb:.2f} MB")
+                elif quota >= 1_000:
+                    quota_kb = quota / 1024
+                    print(f"  Quota: {quota_kb:.2f} KB")
+                else:
+                    print(f"  Total: {quota}")
+    print("--------------------------")
     print(f"SnK MyXL:\n{detail}")
     print("--------------------------")
     print("1. Beli dengan Pulsa")
