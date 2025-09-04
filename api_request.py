@@ -334,7 +334,7 @@ def get_package(api_key: str, tokens: dict, package_option_code: str) -> dict:
     
     raw_payload = {
         "is_transaction_routine": False,
-        "migration_type": "",
+        "migration_type": "NONE",
         "package_family_code": "",
         "family_role_hub": "",
         "is_autobuy": False,
