@@ -154,7 +154,7 @@ def settlement_multipayment(
         print("[decrypt err]", e)
         return resp.text
 
-def show_multipayment(api_key: str, tokens: dict, package_option_code: str, token_confirmation: str, price: int):
+def show_multipayment(api_key: str, tokens: dict, package_option_code: str, token_confirmation: str, price: int, item_name: str = ""):
     print("Fetching available payment methods...")
     
     payment_methods_data = get_payment_methods(
@@ -208,7 +208,7 @@ def show_multipayment(api_key: str, tokens: dict, package_option_code: str, toke
         package_option_code,
         price,
         wallet_number,
-        "",
+        item_name,
         payment_method
     )
     
@@ -369,7 +369,7 @@ def get_qris_code(
     
     return res["data"]["qr_code"]
 
-def show_qris_payment(api_key: str, tokens: dict, package_option_code: str, token_confirmation: str, price: int):
+def show_qris_payment(api_key: str, tokens: dict, package_option_code: str, token_confirmation: str, price: int, item_name: str = ""):
     print("Fetching payment method details...")
     
     payment_methods_data = get_payment_methods(
@@ -389,7 +389,7 @@ def show_qris_payment(api_key: str, tokens: dict, package_option_code: str, toke
         ts_to_sign,
         package_option_code,
         price,
-        ""
+        item_name
     )
     
     if not transaction_id:

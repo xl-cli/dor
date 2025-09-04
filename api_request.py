@@ -356,6 +356,24 @@ def get_package(api_key: str, tokens: dict, package_option_code: str) -> dict:
         
     return res["data"]
 
+def get_addons(api_key: str, tokens: dict, package_option_code: str) -> dict:
+    path = "api/v8/xl-stores/options/addons-pinky-box"
+    
+    raw_payload = {
+        "is_enterprise": False,
+        "lang": "en",
+        "package_option_code": package_option_code
+    }
+    
+    print("Fetching addons...")
+    res = send_api_request(api_key, path, raw_payload, tokens["id_token"], "POST")
+    
+    if "data" not in res:
+        print("Error getting addons:", res.get("error", "Unknown error"))
+        return None
+        
+    return res["data"]
+
 def send_payment_request(
     api_key: str,
     payload_dict: dict,
@@ -423,9 +441,15 @@ def purchase_package(api_key: str, tokens: dict, package_option_code: str) -> di
     
     token_confirmation = package_details_data["token_confirmation"]
     payment_target = package_details_data["package_option"]["package_option_code"]
+    
+    variant_name = package_details_data["package_detail_variant"].get("name", "")
+    option_name = package_details_data["package_option"].get("name", "")
+    item_name = f"{variant_name} {option_name}".strip()
+    
     price = package_details_data["package_option"]["price"]
     amount_str = input(f"Package price is {price}. Enter value if you need to overwrite, press enter to ignore: ")
     amount_int = price
+    
     if amount_str != "":
         try:
             amount_int = int(amount_str)
@@ -501,7 +525,7 @@ def purchase_package(api_key: str, tokens: dict, package_option_code: str) -> di
             "item_code": payment_target,
             "product_type": "",
             "item_price": price,
-            "item_name": "",
+            "item_name": item_name,
             "tax": 0
         }]
     }
