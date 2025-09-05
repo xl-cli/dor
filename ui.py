@@ -257,7 +257,9 @@ def show_package_details(api_key, tokens, package_option_code):
 
     addons = get_addons(api_key, tokens, package_option_code)
     console.print(f"[menu]Addons:[/menu]\n{json.dumps(addons, indent=2)}", style="menu")
-    console.print(f"[highlight]SnK MyXL:[/highlight]\n{detail}", style="menu")
+
+    # SnK MyXL dalam box
+    console.print(Panel(f"[highlight]SnK MyXL:[/highlight]\n{detail}", title="[menu]Syarat & Ketentuan MyXL[/menu]", style="menu"))
 
     payment_text = (
         "[menu]1. Beli dengan Pulsa\n"
