@@ -455,30 +455,5 @@ def show_package_details(api_key, tokens, package_option_code):
     else:
         _print_centered_panel(Text("Purchase cancelled.", style=_c("text_warn")), border_style=_c("border_warning"))
         return False
-
-def main():
-    # dummy values for demo
-    number = "6281234567890"
-    balance = 10000
-    balance_expired_at = 1735689600  # 2025-01-01 00:00:00
-    while True:
-        show_main_menu(number, balance, balance_expired_at)
-        pilihan = Prompt.ask("Pilih menu", console=console) if RICH_OK else input("Pilih menu: ")
-        if pilihan == "1":
-            show_account_menu()
-        elif pilihan == "2":
-            # show_package_menu(...)
-            pass
-        elif pilihan == "3":
-            # beli paket XUT
-            pass
-        elif pilihan == "4":
-            # beli dengan family code
-            pass
-        elif pilihan == "5":
-            show_theme_menu()
-        elif pilihan == "99":
-            break
-        else:
-            _print_centered_panel(Text("Pilihan tidak valid.", style=_c("text_err")), border_style=_c("border_error"))
-            pause()
+    pause()
+    sys.exit(0)
