@@ -12,21 +12,30 @@ from rich.theme import Theme
 from rich.table import Table
 from rich.panel import Panel
 from rich.layout import Layout
+from rich import box
 
-# Definisikan tema custom
+# Definisikan tema custom dengan warna berbeda untuk setiap box
 custom_theme = Theme({
-    "banner": "bold magenta",
-    "menu": "bold cyan",
-    "highlight": "bold yellow",
-    "error": "bold red",
-    "info": "green",
-    "input": "bold white",
+    "banner": "bold magenta on black",
+    "menu": "bold cyan on black",
+    "highlight": "bold yellow on black",
+    "error": "bold red on black",
+    "info": "green on black",
+    "input": "bold white on black",
+    "main_box": "bold white on blue",
+    "account_box": "bold white on green",
+    "login_box": "bold white on purple",
+    "package_box": "bold white on dark_orange",
+    "detail_box": "bold white on dark_red",
+    "benefits_box": "bold white on dark_green",
+    "addons_box": "bold white on dark_cyan",
+    "snk_box": "bold white on dark_magenta",
+    "payment_box": "bold white on dark_blue"
 })
 
 console = Console(theme=custom_theme)
 
 def clear_screen():
-    console.print("clearing screen...", style="info")
     os.system('cls' if os.name == 'nt' else 'clear')
 
 def pause():
@@ -34,7 +43,7 @@ def pause():
     input()
 
 def show_banner():
-    return Panel("[bold magenta]Dor XL by Flyxt9[/bold magenta]", expand=False, style="banner")
+    return Panel("[bold magenta]Dor XL by Flyxt9[/bold magenta]", expand=False, style="banner", box=box.ROUNDED)
 
 def show_main_menu(number, balance, balance_expired_at):
     clear_screen()
@@ -43,7 +52,7 @@ def show_main_menu(number, balance, balance_expired_at):
     expired_at = balance_expired_at
     expired_at_dt = datetime.fromtimestamp(expired_at).strftime("%Y-%m-%d %H:%M:%S")
 
-    info_panel = Panel(f"[bold]Informasi Akun[/bold]\nNomor: [highlight]{phone_number}[/]\nPulsa: [highlight]Rp {remaining_balance}[/]\nMasa aktif: [highlight]{expired_at_dt}[/]", style="menu")
+    info_panel = Panel(f"[bold]Informasi Akun[/bold]\nNomor: [highlight]{phone_number}[/]\nPulsa: [highlight]Rp {remaining_balance}[/]\nMasa aktif: [highlight]{expired_at_dt}[/]", style="menu", box=box.ROUNDED)
     menu_text = (
         "Menu:\n"
         "1. Login/Ganti akun\n"
@@ -52,16 +61,16 @@ def show_main_menu(number, balance, balance_expired_at):
         "4. Beli Paket Berdasarkan Family Code\n"
         "99. Tutup aplikasi"
     )
-    menu_panel = Panel(menu_text, style="menu")
+    menu_panel = Panel(menu_text, style="menu", box=box.ROUNDED)
 
     layout = Layout()
     layout.split_column(
         Layout(show_banner(), size=3),
-        Layout(info_panel, size=6),
-        Layout(menu_panel, ratio=1)
+        Layout(info_panel, size=5),
+        Layout(menu_panel, size=5)
     )
-    # Bungkus semua panel dalam satu box besar
-    main_box = Panel(layout, title="[bold magenta]Main Menu[/bold magenta]", style="menu")
+    # Bungkus semua panel dalam satu box besar dengan warna berbeda dan tidak ada ruang kosong di bawah
+    main_box = Panel(layout, title="[bold magenta]Main Menu[/bold magenta]", style="main_box", box=box.DOUBLE)
     console.print(main_box)
 
 def show_account_menu():
@@ -90,30 +99,30 @@ def show_account_menu():
                 add_user = False
             continue
 
-        title_panel = Panel("[bold cyan]Akun Tersimpan:[/bold cyan]", style="menu")
+        title_panel = Panel("Akun Tersimpan:", style="menu", box=box.ROUNDED)
         if not users or len(users) == 0:
-            users_panel = Panel("Tidak ada akun tersimpan.", style="info")
+            users_panel = Panel("Tidak ada akun tersimpan.", style="info", box=box.ROUNDED)
         else:
             user_lines = []
             for idx, user in enumerate(users):
                 is_active = active_user and user["number"] == active_user["number"]
                 active_marker = "[highlight] (Aktif)[/highlight]" if is_active else ""
                 user_lines.append(f"{idx + 1}. {user['number']}{active_marker}")
-            users_panel = Panel("\n".join(user_lines), style="menu")
+            users_panel = Panel("\n".join(user_lines), style="menu", box=box.ROUNDED)
 
         command_text = (
             "Command:\n0: Tambah Akun\n00: Kembali ke menu utama\n99: Hapus Akun aktif\nMasukan nomor akun untuk berganti."
         )
-        command_panel = Panel(command_text, style="menu")
+        command_panel = Panel(command_text, style="menu", box=box.ROUNDED)
 
         layout = Layout()
         layout.split_column(
             Layout(banner_panel, size=3),
             Layout(title_panel, size=2),
             Layout(users_panel, size=5),
-            Layout(command_panel, ratio=1)
+            Layout(command_panel, size=5)
         )
-        account_box = Panel(layout, title="[bold magenta]Akun XL[/bold magenta]", style="menu")
+        account_box = Panel(layout, title="[bold magenta]Akun XL[/bold magenta]", style="account_box", box=box.DOUBLE)
         console.print(account_box)
 
         input_str = console.input("[input]Pilihan: [/input]")
@@ -156,27 +165,27 @@ def show_login_menu():
         "2. Submit OTP\n"
         "99. Tutup aplikasi"
     )
-    menu_panel = Panel(menu_text, style="menu")
+    menu_panel = Panel(menu_text, style="menu", box=box.ROUNDED)
 
     layout = Layout()
     layout.split_column(
         Layout(banner_panel, size=3),
-        Layout(menu_panel, ratio=1)
+        Layout(menu_panel, size=7)
     )
-    login_box = Panel(layout, title="[bold magenta]Login MyXL[/bold magenta]", style="menu")
+    login_box = Panel(layout, title="[bold magenta]Login MyXL[/bold magenta]", style="login_box", box=box.DOUBLE)
     console.print(login_box)
 
 def login_prompt(api_key: str):
     clear_screen()
     banner_panel = show_banner()
-    menu_panel = Panel("[menu]Masukan nomor XL Prabayar (Contoh 6281234567890):[/menu]", style="menu")
+    menu_panel = Panel("[menu]Masukan nomor XL Prabayar (Contoh 6281234567890):[/menu]", style="menu", box=box.ROUNDED)
 
     layout = Layout()
     layout.split_column(
         Layout(banner_panel, size=3),
-        Layout(menu_panel, ratio=1)
+        Layout(menu_panel, size=7)
     )
-    input_box = Panel(layout, title="[bold magenta]Login XL[/bold magenta]", style="menu")
+    input_box = Panel(layout, title="[bold magenta]Login XL[/bold magenta]", style="login_box", box=box.DOUBLE)
     console.print(input_box)
 
     phone_number = console.input("[input]Nomor: [/input]")
@@ -229,16 +238,16 @@ def show_package_menu(packages):
         for pkg in packages:
             table.add_row(str(pkg['number']), pkg['name'], f"Rp {pkg['price']}")
 
-        table_panel = Panel(table, title="[menu]Paket Tersedia[/menu]", style="menu")
-        back_panel = Panel("99. Kembali ke menu utama", style="menu")
+        table_panel = Panel(table, title="Paket Tersedia", style="menu", box=box.ROUNDED)
+        back_panel = Panel("99. Kembali ke menu utama", style="menu", box=box.ROUNDED)
 
         layout = Layout()
         layout.split_column(
             Layout(banner_panel, size=3),
-            Layout(table_panel, ratio=2),
-            Layout(back_panel, size=2)
+            Layout(table_panel, size=10),
+            Layout(back_panel, size=3)
         )
-        menu_box = Panel(layout, title="[bold magenta]Menu Paket XL[/bold magenta]", style="menu")
+        menu_box = Panel(layout, title="[bold magenta]Menu Paket XL[/bold magenta]", style="package_box", box=box.DOUBLE)
         console.print(menu_box)
 
         pkg_choice = console.input("[input]Pilih paket (nomor): [/input]")
@@ -283,11 +292,11 @@ def show_package_details(api_key, tokens, package_option_code):
         f"[highlight]Harga:[/] Rp {price}\n"
         f"[highlight]Masa Aktif:[/] {validity}\n"
     )
-    info_panel = Panel(info_text, style="menu")
+    info_panel = Panel(info_text, style="detail_box", box=box.ROUNDED)
 
     # Benefits dalam box
     benefits = package["package_option"]["benefits"]
-    benefits_panel = Panel("Tidak ada benefits.", style="menu")
+    benefits_panel = Panel("Tidak ada benefits.", style="benefits_box", box=box.ROUNDED)
     if benefits and isinstance(benefits, list):
         benefits_text = ""
         for benefit in benefits:
@@ -309,13 +318,13 @@ def show_package_details(api_key, tokens, package_option_code):
                     else:
                         b_text += f"  Total: {quota}\n"
             benefits_text += b_text + "\n"
-        benefits_panel = Panel(benefits_text.strip(), title="[menu]Benefits[/menu]", style="menu")
+        benefits_panel = Panel(benefits_text.strip(), title="[menu]Benefits[/menu]", style="benefits_box", box=box.ROUNDED)
 
     addons = get_addons(api_key, tokens, package_option_code)
-    addons_panel = Panel(f"{json.dumps(addons, indent=2)}", title="[menu]Addons[/menu]", style="menu")
+    addons_panel = Panel(f"{json.dumps(addons, indent=2)}", title="[menu]Addons[/menu]", style="addons_box", box=box.ROUNDED)
 
     # SnK MyXL dalam box
-    snk_panel = Panel(f"[highlight]SnK MyXL:[/highlight]\n{detail}", title="[menu]Syarat & Ketentuan MyXL[/menu]", style="menu")
+    snk_panel = Panel(f"[highlight]SnK MyXL:[/highlight]\n{detail}", title="[menu]Syarat & Ketentuan MyXL[/menu]", style="snk_box", box=box.ROUNDED)
 
     payment_text = (
         "1. Beli dengan Pulsa\n"
@@ -324,19 +333,19 @@ def show_package_details(api_key, tokens, package_option_code):
     )
     if payment_for == "REDEEM_VOUCHER":
         payment_text += "4. Ambil sebagai bonus (jika tersedia)\n"
-    payment_panel = Panel(payment_text, title="[menu]Pembayaran[/menu]", style="menu")
+    payment_panel = Panel(payment_text, title="[menu]Pembayaran[/menu]", style="payment_box", box=box.ROUNDED)
 
     layout = Layout()
     layout.split_column(
         Layout(banner_panel, size=3),
         Layout(info_panel, size=6),
-        Layout(benefits_panel, ratio=3),
-        Layout(addons_panel, ratio=2),
-        Layout(snk_panel, ratio=2),
-        Layout(payment_panel, ratio=1)
+        Layout(benefits_panel, size=7),
+        Layout(addons_panel, size=5),
+        Layout(snk_panel, size=5),
+        Layout(payment_panel, size=4)
     )
-    box = Panel(layout, title="[bold magenta]Detail Paket XL[/bold magenta]", style="menu")
-    console.print(box)
+    box_panel = Panel(layout, title="[bold magenta]Detail Paket XL[/bold magenta]", style="detail_box", box=box.DOUBLE)
+    console.print(box_panel)
 
     choice = console.input("[input]Pilih metode pembayaran: [/input]")
 
