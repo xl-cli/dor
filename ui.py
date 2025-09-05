@@ -2,369 +2,281 @@ import json
 import os
 import sys
 from datetime import datetime
-
-# Import modul lain sesuai kebutuhan project Anda
 from api_request import get_otp, submit_otp, save_tokens, get_package, purchase_package, get_addons
 from purchase_api import show_multipayment, show_qris_payment, settlement_bounty
 from auth_helper import AuthInstance
-
-# ========== Rich Setup ==========
-try:
-    from rich.console import Console
-    from rich.panel import Panel
-    from rich.table import Table
-    from rich.align import Align
-    from rich.box import ROUNDED, HEAVY, DOUBLE
-    from rich.text import Text
-    from rich.rule import Rule
-    from rich.prompt import Prompt
-    from rich.progress import Progress, SpinnerColumn, TextColumn
-    RICH_OK = True
-except Exception:
-    RICH_OK = False
-
-console = Console() if RICH_OK else None
-
-# ========= Theme presets + persist =========
-_THEME_FILE = "theme.json"
-
-THEMES = {
-    # ... (unchanged, theme definitions)
-    # TEMA TIDAK DIUBAH
-}
-
-def _load_theme_name():
-    try:
-        if os.path.exists(_THEME_FILE):
-            with open(_THEME_FILE, "r", encoding="utf8") as f:
-                return json.load(f).get("name", "dark_neon")
-    except Exception:
-        pass
-    return "dark_neon"
-
-def _save_theme_name(name: str):
-    try:
-        with open(_THEME_FILE, "w", encoding="utf8") as f:
-            json.dump({"name": name}, f)
-    except Exception:
-        pass
-
-_theme_name = _load_theme_name()
-THEME = THEMES.get(_theme_name, THEMES["dark_neon"]).copy()
-
-def set_theme(name: str):
-    global THEME, _theme_name
-    if name in THEMES:
-        THEME = THEMES[name].copy()
-        _theme_name = name
-        _save_theme_name(name)
-        return True
-    return False
-
-def _c(key: str) -> str:
-    return THEME.get(key, "white")
-
-def _term_width(default=80):
-    if not RICH_OK:
-        return default
-    try:
-        return console.size.width
-    except Exception:
-        return default
-
-def _target_width(pct=0.9, min_w=38, max_w=None):
-    w = _term_width()
-    tw = int(w * pct)
-    if max_w is not None:
-        tw = min(tw, max_w)
-    tw = max(min_w, min(tw, w - 2))
-    return tw
-
-def _print_centered_panel(renderable, *, title=None, border_style=None, box=ROUNDED, padding=(1,1), width=None):
-    if not RICH_OK:
-        print("--------------------------")
-        if isinstance(renderable, str):
-            print(renderable)
-        else:
-            print("[Panel disabled (rich not installed)]")
-        print("--------------------------")
-        return
-    panel = Panel(
-        renderable,
-        title=title,
-        border_style=border_style,
-        box=box,
-        padding=padding,
-        width=width or _target_width()
-    )
-    console.print(Align.center(panel))
-
-def _hex_to_rgb(h):
-    h = h.lstrip("#")
-    return tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
-
-def _rgb_to_hex(rgb):
-    return "#{:02X}{:02X}{:02X}".format(*rgb)
-
-def _lerp(a, b, t):
-    return int(a + (b - a) * t)
-
-def _gradient_colors(start_hex, end_hex, n):
-    try:
-        r1,g1,b1 = _hex_to_rgb(start_hex)
-        r2,g2,b2 = _hex_to_rgb(end_hex)
-        if n <= 1:
-            return [start_hex]
-        colors = []
-        for i in range(n):
-            t = i / (n - 1)
-            r = _lerp(r1, r2, t)
-            g = _lerp(g1, g2, t)
-            b = _lerp(b1, b2, t)
-            colors.append(_rgb_to_hex((r,g,b)))
-        return colors
-    except Exception:
-        return [start_hex] * max(1, n)
-
-def _print_gradient_title(text="Dor XL by Flyxt9"):
-    if not RICH_OK:
-        print("Dor XL by Flyxt9")
-        return
-    try:
-        s = str(text)
-        colors = _gradient_colors(_c("gradient_start"), _c("gradient_end"), len(s))
-        t = Text(justify="center")
-        for ch, col in zip(s, colors):
-            t.append(ch, style=f"bold {col}")
-        console.print(Align.center(t))
-    except Exception:
-        t = Text(str(text), style=_c("text_title"))
-        console.print(Align.center(t))
+from util import display_html
 
 def clear_screen():
+    print("clearing screen...")
     os.system('cls' if os.name == 'nt' else 'clear')
 
 def pause():
-    if RICH_OK:
-        console.print("\n[dim]Tekan Enter untuk lanjut...[/]", end="")
-        input()
-    else:
-        input("\nTekan Enter untuk lanjut...")
-
+    input("\nTekan Enter untuk lanjut...")
+    
 def show_banner():
+    print("--------------------------")
+    print("Dor XL by Flyxt9")
+    print("--------------------------")
+    
+def show_main_menu(number, balance, balance_expired_at):
     clear_screen()
-    if RICH_OK:
-        header = Panel.fit(
-            Align.center(Text.assemble(
-                ("✦ ", _c("text_key")),
-                ("Panel Dor Paket ©2025", _c("text_title")),
-                (" by ", "dim"),
-                ("Barbex_ID", _c("text_sub")),
-                (" ✦", _c("text_key"))
-            )),
-            title=f"[{_c('text_title')}]SELAMAT DATANG[/]",
-            subtitle="[dim]Powered by dratx1[/]",
-            border_style=_c("border_primary"),
-            box=DOUBLE,
-            padding=(1, 2)
-        )
-        console.print(Align.center(header))
-        _print_gradient_title("Tembak Paket Internet Murah")
-        console.print(Align.center(Rule(style=_c("border_primary"))))
-    else:
-        print("--------------------------")
-        print("")
-        print("--------------------------")
-
-# ===================== FUNGSI UTAMA MENU =====================
-
-def fetch_balance():
-    # Fungsi stub, sesuaikan dengan API saldo Anda
-    # TODO: Integrasi dengan API asli
-    return 123456
-
-def show_package_selector():
-    # Fungsi stub untuk memilih paket
-    # TODO: Integrasi dengan API atau logic Anda
-    _print_centered_panel("Daftar paket belum diimplementasikan.\nSilakan integrasikan dengan API atau logic Anda.", border_style=_c("border_info"))
-    pause()
-
-def show_main_menu():
-    while True:
+    phone_number = number
+    remaining_balance = balance
+    expired_at = balance_expired_at
+    expired_at_dt = datetime.fromtimestamp(expired_at).strftime("%Y-%m-%d %H:%M:%S")
+    
+    print("--------------------------")
+    print("Informasi Akun")
+    print(f"Nomor: {phone_number}")
+    print(f"Pulsa: Rp {remaining_balance}")
+    print(f"Masa aktif: {expired_at_dt}")
+    print("--------------------------")
+    print("Menu:")
+    print("1. Login/Ganti akun")
+    print("2. Lihat Paket Saya")
+    print("3. Beli Paket XUT")
+    print("4. Beli Paket Berdasarkan Family Code")
+    print("99. Tutup aplikasi")
+    print("--------------------------")
+        
+def show_account_menu():
+    clear_screen()
+    AuthInstance.load_tokens()
+    users = AuthInstance.refresh_tokens
+    active_user = AuthInstance.get_active_user()
+    
+    # print(f"users: {users}")
+    
+    in_account_menu = True
+    add_user = False
+    while in_account_menu:
         clear_screen()
-        show_banner()
-        if RICH_OK:
-            menu = Table(box=ROUNDED, show_header=False, padding=(0,1), expand=True)
-            menu.add_column("key", justify="right", style=_c("text_number"), no_wrap=True, width=4)
-            menu.add_column("desc", style=_c("text_body"))
-            menu.add_row("[bold]1[/]", "Cek Saldo")
-            menu.add_row("[bold]2[/]", "Tembak Paket")
-            menu.add_row("[bold]3[/]", "Keluar")
-            _print_centered_panel(menu, title=f"[{_c('text_title')}]Menu Utama[/]", border_style=_c("border_primary"))
-            choice = Prompt.ask(f"[{_c('text_sub')}]Pilih menu")
-        else:
-            print("1. Cek Saldo")
-            print("2. Tembak Paket")
-            print("3. Keluar")
-            choice = input("Pilih menu: ")
+        print("--------------------------")
+        if AuthInstance.get_active_user() is None or add_user:
+            number, refresh_token = login_prompt(AuthInstance.api_key)
+            if not refresh_token:
+                print("Gagal menambah akun. Silahkan coba lagi.")
+                pause()
+                continue
+            
+            AuthInstance.add_refresh_token(int(number), refresh_token)
+            AuthInstance.load_tokens()
+            users = AuthInstance.refresh_tokens
+            
+            
+            if add_user:
+                add_user = False
+            continue
+        
+        print("Akun Tersimpan:")
+        if not users or len(users) == 0:
+            print("Tidak ada akun tersimpan.")
 
-        if choice == "1":
-            try:
-                saldo = fetch_balance()
-                _print_centered_panel(f"Saldo Anda: Rp {saldo:,}", border_style=_c("border_info"))
-            except Exception as e:
-                _print_centered_panel(f"Gagal mengambil saldo: {e}", border_style=_c("border_error"))
-            pause()
-        elif choice == "2":
-            try:
-                show_package_selector()
-            except Exception as e:
-                _print_centered_panel(f"Gagal menampilkan paket: {e}", border_style=_c("border_error"))
-            pause()
-        elif choice == "3":
-            _print_centered_panel("Terima kasih telah menggunakan aplikasi.", border_style=_c("border_success"))
-            pause()
-            sys.exit()
+        for idx, user in enumerate(users):
+            is_active = active_user and user["number"] == active_user["number"]
+            active_marker = " (Aktif)" if is_active else ""
+            print(f"{idx + 1}. {user['number']}{active_marker}")
+        
+        print("Command:")
+        print("0: Tambah Akun")
+        print("00: Kembali ke menu utama")
+        print("99: Hapus Akun aktif")
+        print("Masukan nomor akun untuk berganti.")
+        input_str = input("Pilihan:")
+        if input_str == "00":
+            in_account_menu = False
+            return active_user["number"] if active_user else None
+        elif input_str == "0":
+            add_user = True
+            continue
+        elif input_str == "99":
+            if not active_user:
+                print("Tidak ada akun aktif untuk dihapus.")
+                pause()
+                continue
+            confirm = input(f"Yakin ingin menghapus akun {active_user['number']}? (y/n): ")
+            if confirm.lower() == 'y':
+                AuthInstance.remove_refresh_token(active_user["number"])
+                # AuthInstance.load_tokens()
+                users = AuthInstance.refresh_tokens
+                active_user = AuthInstance.get_active_user()
+                print("Akun berhasil dihapus.")
+                pause()
+            else:
+                print("Penghapusan akun dibatalkan.")
+                pause()
+            continue
+        elif input_str.isdigit() and 1 <= int(input_str) <= len(users):
+            selected_user = users[int(input_str) - 1]
+            return selected_user['number']
         else:
-            _print_centered_panel("Pilihan tidak dikenal, silakan coba lagi.", border_style=_c("border_warning"))
+            print("Input tidak valid. Silahkan coba lagi.")
             pause()
+            continue
+        
+def show_login_menu():
+    clear_screen()
+    print("--------------------------")
+    print("Login ke MyXL")
+    print("--------------------------")
+    print("1. Request OTP")
+    print("2. Submit OTP")
+    print("99. Tutup aplikasi")
+    print("--------------------------")
+    
+def login_prompt(api_key: str):
+    clear_screen()
+    print("--------------------------")
+    print("Login ke MyXL")
+    print("--------------------------")
+    print("Masukan nomor XL Prabayar (Contoh 6281234567890):")
+    phone_number = input("Nomor: ")
 
-# ===================== FUNGSI DETAIL PAKET =====================
+    if not phone_number.startswith("628") or len(phone_number) < 10 or len(phone_number) > 14:
+        print("Nomor tidak valid. Pastikan nomor diawali dengan '628' dan memiliki panjang yang benar.")
+        return None
+
+    try:
+        subscriber_id = get_otp(phone_number)
+        if not subscriber_id:
+            return None
+        print("OTP Berhasil dikirim ke nomor Anda.")
+        
+        otp = input("Masukkan OTP yang telah dikirim: ")
+        if not otp.isdigit() or len(otp) != 6:
+            print("OTP tidak valid. Pastikan OTP terdiri dari 6 digit angka.")
+            pause()
+            return None
+        
+        tokens = submit_otp(api_key, phone_number, otp)
+        if not tokens:
+            print("Gagal login. Periksa OTP dan coba lagi.")
+            pause()
+            return None
+        
+        print("Berhasil login!")
+        
+        return phone_number, tokens["refresh_token"]
+    except Exception as e:
+        return None, None
+    
+def show_package_menu(packages):
+    api_key = AuthInstance.api_key
+    tokens = AuthInstance.get_active_tokens()
+    if not tokens:
+        print("No active user tokens found.")
+        pause()
+        return None
+    
+    in_package_menu = True
+    while in_package_menu:
+        clear_screen()
+        print("--------------------------")
+        print("Paket Tersedia")
+        print("--------------------------")
+        for pkg in packages:
+            print(f"{pkg['number']}. {pkg['name']} - Rp {pkg['price']}")
+        print("99. Kembali ke menu utama")
+        print("--------------------------")
+        pkg_choice = input("Pilih paket (nomor): ")
+        if pkg_choice == "99":
+            in_package_menu = False
+            return None
+        selected_pkg = next((p for p in packages if p["number"] == int(pkg_choice)), None)
+        if not selected_pkg:
+            print("Paket tidak ditemukan. Silakan masukan nomor yang benar.")
+            continue
+        
+        is_done = show_package_details(api_key, tokens, selected_pkg["code"])
+        if is_done:
+            in_package_menu = False
+            return None
+    
 def show_package_details(api_key, tokens, package_option_code):
     clear_screen()
-    show_banner()
-
+    print("--------------------------")
+    print("Detail Paket")
+    print("--------------------------")
     package = get_package(api_key, tokens, package_option_code)
+    # print(f"[SPD-202]:\n{json.dumps(package, indent=2)}")
     if not package:
-        _print_centered_panel("Failed to load package details.", border_style=_c("border_error"))
+        print("Failed to load package details.")
         pause()
         return False
-
-    name2 = package.get("package_detail_variant", {}).get("name","")
+    name2 = package.get("package_detail_variant", "").get("name","") #For Xtra Combo
     price = package["package_option"]["price"]
-    detail = package["package_option"]["tnc"]
-    detail = (detail.replace("<p>", "").replace("</p>", "")
-                    .replace("<strong>", "").replace("</strong>", "")
-                    .replace("<br>", "").replace("<br />", "").strip())
-    name3 = package.get("package_option", {}).get("name","")
-    name1 = package.get("package_family", {}).get("name","")
-    title = f"{name1} {name2} {name3}".strip()
+    detail = display_html(package["package_option"]["tnc"])
+    validity = package["package_option"]["validity"]
 
+    name3 = package.get("package_option", {}).get("name","") #Vidio
+    name1 = package.get("package_family", {}).get("name","") #Unlimited Turbo
+    
+    title = f"{name1} {name2} {name3}".strip()
+    
+    # variant_name = package_details_data["package_detail_variant"].get("name", "")
+    # option_name = package_details_data["package_option"].get("name", "")
+    item_name = f"{name2} {name3}".strip()
+    
     token_confirmation = package["token_confirmation"]
     ts_to_sign = package["timestamp"]
     payment_for = package["package_family"]["payment_for"]
-    validity = package["package_option"].get("validity", "")
-
-    benefits = package["package_option"].get("benefits", [])
-    addons = get_addons(api_key, tokens, package_option_code)
-
-    if RICH_OK:
-        info = Table.grid(padding=(0,2))
-        info.add_column(justify="right", style=_c("text_sub"))
-        info.add_column(style=_c("text_body"))
-        info.add_row("Nama", f"[{_c('text_value')}]{title}[/]")
-        info.add_row("Harga", f"[{_c('text_money')}]Rp {price:,}[/]")
-        info.add_row("Masa Aktif", f"[{_c('text_date')}]{validity}[/]")
-        _print_centered_panel(info, title=f"[{_c('text_title')}]Detail Paket[/]", border_style=_c("border_info"))
-
-        _print_centered_panel(Text(detail, style=_c("text_body")), title=f"[{_c('text_title')}]S&K MyXL[/]", border_style=_c("border_primary"))
-
-        # Benefits Rich Table
-        if benefits and isinstance(benefits, list):
-            benefit_table = Table(box=ROUNDED, show_header=True, header_style=_c("text_sub"), expand=True)
-            benefit_table.add_column("Benefit", style=_c("text_body"))
-            benefit_table.add_column("Detail", style=_c("text_body"))
-            for benefit in benefits:
-                name_b = benefit.get("name", "-")
-                if "Call" in name_b:
-                    value = f"{benefit.get('total',0)/60:.0f} menit"
-                else:
-                    quota = int(benefit.get("total", 0))
+    
+    print("--------------------------")
+    print(f"Nama: {title}")
+    print(f"Harga: Rp {price}")
+    print(f"Masa Aktif: {validity}")
+    print("--------------------------")
+    benefits = package["package_option"]["benefits"]
+    if benefits and isinstance(benefits, list):
+        print("Benefits:")
+        for benefit in benefits:
+            print("--------------------------")
+            print(f" Name: {benefit['name']}")
+            if "Call" in benefit['name']:
+                print(f"  Total: {benefit['total']/60} menit")
+            else:
+                if benefit['total'] > 0:
+                    quota = int(benefit['total'])
+                    # It is in byte, make it in GB
                     if quota >= 1_000_000_000:
                         quota_gb = quota / (1024 ** 3)
-                        value = f"{quota_gb:.2f} GB"
+                        print(f"  Quota: {quota_gb:.2f} GB")
                     elif quota >= 1_000_000:
                         quota_mb = quota / (1024 ** 2)
-                        value = f"{quota_mb:.2f} MB"
+                        print(f"  Quota: {quota_mb:.2f} MB")
                     elif quota >= 1_000:
                         quota_kb = quota / 1024
-                        value = f"{quota_kb:.2f} KB"
-                    elif quota > 0:
-                        value = f"{quota}"
+                        print(f"  Quota: {quota_kb:.2f} KB")
                     else:
-                        value = "-"
-                benefit_table.add_row(name_b, value)
-            _print_centered_panel(benefit_table, title=f"[{_c('text_title')}]Benefits[/]", border_style=_c("border_success"))
+                        print(f"  Total: {quota}")
+    print("--------------------------")
+    addons = get_addons(api_key, tokens, package_option_code)
+    print(f"Addons:\n{json.dumps(addons, indent=2)}")
+    print("--------------------------")
+    print(f"SnK MyXL:\n{detail}")
+    print("--------------------------")
+    print("1. Beli dengan Pulsa")
+    print("2. Beli dengan E-Wallet")
+    print("3. Bayar dengan QRIS")
+    
+    if payment_for == "REDEEM_VOUCHER":
+        print("4. Ambil sebagai bonus (jika tersedia)")
 
-        # Addons Rich Panel
-        if addons:
-            addon_text = Text(json.dumps(addons, indent=2), style=_c("text_body"))
-            _print_centered_panel(addon_text, title=f"[{_c('text_title')}]Addons[/]", border_style=_c("border_primary"))
-
-        menu = Table(box=ROUNDED, show_header=False, padding=(0,1), expand=True)
-        menu.add_column("key", justify="right", style=_c("text_number"), no_wrap=True, width=4)
-        menu.add_column("desc", style=_c("text_body"))
-        menu.add_row("[bold]1[/]", "Beli dengan Pulsa")
-        menu.add_row("[bold]2[/]", "Beli dengan E-Wallet")
-        menu.add_row("[bold]3[/]", "Bayar dengan QRIS")
-        if payment_for == "REDEEM_VOUCHER":
-            menu.add_row("[bold]4[/]", "Ambil sebagai bonus (jika tersedia)")
-        _print_centered_panel(menu, title=f"[{_c('text_title')}]Metode Pembayaran[/]", border_style=_c("border_info"))
-
-        choice = Prompt.ask(f"[{_c('text_sub')}]Pilih metode pembayaran")
-    else:
-        print("--------------------------")
-        print(f"Nama: {title}")
-        print(f"Harga: Rp {price}")
-        print(f"Masa Aktif: {validity}")
-        print("--------------------------")
-        if benefits and isinstance(benefits, list):
-            print("Benefits:")
-            for benefit in benefits:
-                print("--------------------------")
-                print(f" Name: {benefit.get('name', '-')}")
-                if "Call" in benefit.get("name", ""):
-                    print(f"  Total: {benefit.get('total',0)/60} menit")
-                else:
-                    quota = int(benefit.get("total", 0))
-                    if quota > 0:
-                        if quota >= 1_000_000_000:
-                            quota_gb = quota / (1024 ** 3)
-                            print(f"  Quota: {quota_gb:.2f} GB")
-                        elif quota >= 1_000_000:
-                            quota_mb = quota / (1024 ** 2)
-                            print(f"  Quota: {quota_mb:.2f} MB")
-                        elif quota >= 1_000:
-                            quota_kb = quota / 1024
-                            print(f"  Quota: {quota_kb:.2f} KB")
-                        else:
-                            print(f"  Total: {quota}")
-        print("--------------------------")
-        print(f"Addons:\n{json.dumps(addons, indent=2)}")
-        print("--------------------------")
-        print("1. Beli dengan Pulsa")
-        print("2. Beli dengan E-Wallet")
-        print("3. Bayar dengan QRIS")
-        if payment_for == "REDEEM_VOUCHER":
-            print("4. Ambil sebagai bonus (jika tersedia)")
-        choice = input("Pilih metode pembayaran: ")
-
+    choice = input("Pilih metode pembayaran: ")
     if choice == '1':
         purchase_package(api_key, tokens, package_option_code)
-        _print_centered_panel("Silahkan cek hasil pembelian di aplikasi MyXL.", border_style=_c("border_info"))
-        pause()
+        input("Silahkan cek hasil pembelian di aplikasi MyXL. Tekan Enter untuk kembali.")
         return True
     elif choice == '2':
-        show_multipayment(api_key, tokens, package_option_code, token_confirmation, price)
-        _print_centered_panel("Silahkan lakukan pembayaran & cek hasil pembelian di aplikasi MyXL.", border_style=_c("border_info"))
-        pause()
+        show_multipayment(api_key, tokens, package_option_code, token_confirmation, price, item_name)
+        input("Silahkan lakukan pembayaran & cek hasil pembelian di aplikasi MyXL. Tekan Enter untuk kembali.")
         return True
     elif choice == '3':
-        show_qris_payment(api_key, tokens, package_option_code, token_confirmation, price)
-        _print_centered_panel("Silahkan lakukan pembayaran & cek hasil pembelian di aplikasi MyXL.", border_style=_c("border_info"))
-        pause()
+        show_qris_payment(api_key, tokens, package_option_code, token_confirmation, price, item_name)
+        input("Silahkan lakukan pembayaran & cek hasil pembelian di aplikasi MyXL. Tekan Enter untuk kembali.")
         return True
-    elif choice == '4' and payment_for == "REDEEM_VOUCHER":
+    elif choice == '4':
         settlement_bounty(
             api_key=api_key,
             tokens=tokens,
@@ -374,13 +286,8 @@ def show_package_details(api_key, tokens, package_option_code):
             price=price,
             item_name=name2
         )
-        _print_centered_panel("Redeem/bonus diproses. Cek aplikasi MyXL.", border_style=_c("border_success"))
-        pause()
-        return True
     else:
-        _print_centered_panel("Purchase dibatalkan.", border_style=_c("border_warning"))
+        print("Purchase cancelled.")
         return False
-
-# ===================== JALANKAN PROGRAM =====================
-if __name__ == "__main__":
-    show_main_menu()
+    pause()
+    sys.exit(0)
