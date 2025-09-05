@@ -230,11 +230,12 @@ def show_package_details(api_key, tokens, package_option_code):
     )
     console.print(Panel(info_text, style="menu"))
 
+    # Benefits dalam box
     benefits = package["package_option"]["benefits"]
     if benefits and isinstance(benefits, list):
-        console.print("[menu]Benefits:[/menu]", style="menu")
+        benefits_text = ""
         for benefit in benefits:
-            b_text = f"[menu]Name: {benefit['name']}[/menu]\n"
+            b_text = f"Name: {benefit['name']}\n"
             if "Call" in benefit['name']:
                 b_text += f"  Total: {benefit['total']/60} menit\n"
             else:
@@ -251,7 +252,8 @@ def show_package_details(api_key, tokens, package_option_code):
                         b_text += f"  Quota: {quota_kb:.2f} KB\n"
                     else:
                         b_text += f"  Total: {quota}\n"
-            console.print(b_text, style="menu")
+            benefits_text += b_text + "\n"
+        console.print(Panel(benefits_text.strip(), title="[menu]Benefits[/menu]", style="menu"))
 
     addons = get_addons(api_key, tokens, package_option_code)
     console.print(f"[menu]Addons:[/menu]\n{json.dumps(addons, indent=2)}", style="menu")
