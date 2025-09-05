@@ -482,7 +482,3 @@ def main():
         else:
             _print_centered_panel(Text("Pilihan tidak valid.", style=_c("text_err")), border_style=_c("border_error"))
             pause()
-
-# Uncomment for CLI usage
-# if __name__ == "__main__":
-#     main()
