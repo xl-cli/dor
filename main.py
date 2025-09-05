@@ -41,6 +41,9 @@ def main():
                 if family_code == "99":
                     continue
                 get_packages_by_family(family_code)
+            elif choice == "5":
+                change_theme_menu()
+                continue
             elif choice == "99":
                 print("Exiting the application.")
                 sys.exit(0)
