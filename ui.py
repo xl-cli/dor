@@ -2,6 +2,8 @@ import json
 import os
 import sys
 from datetime import datetime
+
+# Import modul lain sesuai kebutuhan project Anda
 from api_request import get_otp, submit_otp, save_tokens, get_package, purchase_package, get_addons
 from purchase_api import show_multipayment, show_qris_payment, settlement_bounty
 from auth_helper import AuthInstance
@@ -252,8 +254,62 @@ def show_banner():
         print("")
         print("--------------------------")
 
-# ... [fungsi lain tetap seperti di file anda] ...
+# ===================== FUNGSI UTAMA MENU =====================
 
+def fetch_balance():
+    # Fungsi stub, sesuaikan dengan API saldo Anda
+    # Misal: return get_balance(api_key, tokens)
+    # Untuk contoh, return angka statis
+    return 123456
+
+def show_package_selector():
+    # Fungsi stub untuk memilih paket
+    # Anda bisa tampilkan daftar paket lalu panggil show_package_details
+    _print_centered_panel("Daftar paket belum diimplementasikan.\nSilakan integrasikan dengan API atau logic Anda.", border_style=_c("border_info"))
+    pause()
+
+def show_main_menu():
+    while True:
+        clear_screen()
+        show_banner()
+        if RICH_OK:
+            menu = Table(box=ROUNDED, show_header=False, padding=(0,1), expand=True)
+            menu.add_column("key", justify="right", style=_c("text_number"), no_wrap=True, width=4)
+            menu.add_column("desc", style=_c("text_body"))
+            menu.add_row("[bold]1[/]", "Cek Saldo")
+            menu.add_row("[bold]2[/]", "Tembak Paket")
+            menu.add_row("[bold]3[/]", "Keluar")
+            _print_centered_panel(menu, title=f"[{_c('text_title')}]Menu Utama[/]", border_style=_c("border_primary"))
+            choice = Prompt.ask(f"[{_c('text_sub')}]Pilih menu")
+        else:
+            print("1. Cek Saldo")
+            print("2. Tembak Paket")
+            print("3. Keluar")
+            choice = input("Pilih menu: ")
+
+        if choice == "1":
+            try:
+                saldo = fetch_balance()
+                _print_centered_panel(f"Saldo Anda: Rp {saldo:,}", border_style=_c("border_info"))
+            except Exception as e:
+                _print_centered_panel(f"Gagal mengambil saldo: {e}", border_style=_c("border_error"))
+            pause()
+        elif choice == "2":
+            try:
+                show_package_selector()
+            except Exception as e:
+                _print_centered_panel(f"Gagal menampilkan paket: {e}", border_style=_c("border_error"))
+            pause()
+        elif choice == "3":
+            _print_centered_panel("Terima kasih telah menggunakan aplikasi.", border_style=_c("border_success"))
+            pause()
+            sys.exit()
+        else:
+            _print_centered_panel("Pilihan tidak dikenal, silakan coba lagi.", border_style=_c("border_warning"))
+            pause()
+
+# ===================== FUNGSI DETAIL PAKET =====================
+# Copy paste dari file Anda, sesuaikan jika perlu
 def show_package_details(api_key, tokens, package_option_code):
     clear_screen()
     show_banner()
@@ -405,4 +461,6 @@ def show_package_details(api_key, tokens, package_option_code):
         _print_centered_panel("Purchase dibatalkan.", border_style=_c("border_warning"))
         return False
 
-# ... [fungsi lain tetap seperti di file anda] ...
+# ===================== JALANKAN PROGRAM =====================
+if __name__ == "__main__":
+    show_main_menu()
