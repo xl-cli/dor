@@ -1,7 +1,7 @@
 import sys
 
 from api_request import *
-from ui import *
+from ui import *  # Sudah mengimpor change_theme_menu dari ui.py
 from paket_xut import get_package_xut
 from my_package import fetch_my_packages
 from paket_custom_family import get_packages_by_family
@@ -42,7 +42,7 @@ def main():
                     continue
                 get_packages_by_family(family_code)
             elif choice == "5":
-                change_theme_menu()
+                change_theme_menu()  # Sudah sesuai dengan ui
                 continue
             elif choice == "99":
                 print("Exiting the application.")
@@ -65,4 +65,3 @@ if __name__ == "__main__":
         print("\nExiting the application.")
     except Exception as e:
         print(f"An error occurred: {e}")
-    
