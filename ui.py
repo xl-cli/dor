@@ -255,8 +255,18 @@ def show_package_details(api_key, tokens, package_option_code):
             benefits_text += b_text + "\n"
         console.print(Panel(benefits_text.strip(), title="[menu]Benefits[/menu]", style="menu"))
 
+    # Addons dalam box
     addons = get_addons(api_key, tokens, package_option_code)
-    console.print(f"[menu]Addons:[/menu]\n{json.dumps(addons, indent=2)}", style="menu")
+    if addons and isinstance(addons, list) and len(addons) > 0:
+        addons_text = ""
+        for addon in addons:
+            a_name = addon.get("name", "Unknown")
+            a_price = addon.get("price", "")
+            a_desc = addon.get("description", "")
+            addons_text += f"- {a_name} (Rp {a_price})\n  {a_desc}\n"
+        console.print(Panel(addons_text.strip(), title="[menu]Addons[/menu]", style="menu"))
+    else:
+        console.print(Panel("Tidak ada Addons tersedia.", title="[menu]Addons[/menu]", style="menu"))
 
     # SnK MyXL dalam box
     console.print(Panel(f"[highlight]SnK MyXL:[/highlight]\n{detail}", title="[menu]Syarat & Ketentuan MyXL[/menu]", style="menu"))
