@@ -20,7 +20,7 @@ git clone https://github.com/xl-cli/dor
 ```
 5. Open the folder
 ```
-cd dor
+cd dorv1
 ```
 6. Install dependencies
 ```
