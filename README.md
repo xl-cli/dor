@@ -32,7 +32,6 @@ python main.py
 ```
 8. Input your API key when prompted
 
-
 # For updates
 ```
 git pull --rebase
