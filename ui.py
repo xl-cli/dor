@@ -256,9 +256,8 @@ def show_package_details(api_key, tokens, package_option_code):
         console.print(Panel(benefits_text.strip(), title="[menu]Benefits[/menu]", style="menu"))
 
     addons = get_addons(api_key, tokens, package_option_code)
-    console.print(f"[menu]Addons:[/menu]\n{json.dumps(addons, indent=2)}", style="menu")
+    console.print(panel(f"[menu]Addons:[/menu]\n{json.dumps(addons, indent=2)}", style="menu")
 
-    # SnK MyXL dalam box
     console.print(Panel(f"[highlight]SnK MyXL:[/highlight]\n{detail}", title="[menu]Syarat & Ketentuan MyXL[/menu]", style="menu"))
 
     payment_text = (
