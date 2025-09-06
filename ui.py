@@ -15,13 +15,25 @@ from rich.layout import Layout
 
 # Definisikan tema custom
 custom_theme = Theme({
-    "banner": "bold magenta",
-    "menu": "bold cyan",
-    "highlight": "bold yellow",
-    "error": "bold red",
-    "info": "green",
-    "input": "bold white",
-})
+        "border_primary": "magenta",
+        "border_info": "cyan",
+        "border_success": "green",
+        "border_warning": "yellow",
+        "border_error": "red",
+        "text_title": "bold white",
+        "text_sub": "bold cyan",
+        "text_ok": "bold green",
+        "text_warn": "bold yellow",
+        "text_err": "bold red",
+        "text_body": "white",
+        "text_key": "magenta",
+        "text_value": "bold white",
+        "text_money": "bold green",
+        "text_date": "bold yellow",
+        "text_number": "magenta",
+        "gradient_start": "#8A2BE2",
+        "gradient_end": "#00FFFF",
+    },)
 
 console = Console(theme=custom_theme)
 
